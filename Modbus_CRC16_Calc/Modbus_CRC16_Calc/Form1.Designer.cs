@@ -123,7 +123,10 @@
             // 
             // btnClear
             // 
+            this.btnClear.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnClear.Location = new System.Drawing.Point(343, 159);
+            this.btnClear.MaximumSize = new System.Drawing.Size(75, 23);
+            this.btnClear.MinimumSize = new System.Drawing.Size(75, 23);
             this.btnClear.Name = "btnClear";
             this.btnClear.Size = new System.Drawing.Size(75, 23);
             this.btnClear.TabIndex = 9;
@@ -148,6 +151,8 @@
             this.Controls.Add(this.lblModCRC16Result);
             this.Controls.Add(this.txtDataBuffer);
             this.Controls.Add(this.lblDataBuffer);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.MaximizeBox = false;
             this.Name = "frmMain";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Modbus CRC-16 Calculator";

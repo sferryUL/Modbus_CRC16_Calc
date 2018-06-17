@@ -19,71 +19,23 @@ namespace Modbus_CRC16_Calc
 
         private void btnCalcModCRC16_Click(object sender, EventArgs e)
         {
-            string tmpBuffer;
-            Char c;
             int BuffSize = 0;
-            int CRCResult = 0xFFFF, CRC16Upper = 0, CRC16Lower = 0, XOR = 0;
-            int[] buffer = new int[] { 0x01, 0x08, 0x00, 0x00, 0xA5, 0x37 };
-            string[] hexbuff;
-            List<int> buff2 = new List<int>();
-            int temp;
-            int XORVal = 0xA001;
+            int ModbusCRC16, CRC16Upper = 0, CRC16Lower = 0;
+            List<int> buffer = new List<int>();
 
             if (txtDataBuffer.Text == "")
                 return;
+
             // Determine the number of bytes that have been entered into the data field.
-            tmpBuffer = txtDataBuffer.Text;
-            tmpBuffer = tmpBuffer.Trim();
-            tmpBuffer = tmpBuffer.PadRight(tmpBuffer.Length + 1);
-            for(int ctr = 0; ctr < tmpBuffer.Length; ctr++)
-            {
-                c = tmpBuffer[ctr];
-                if (Char.IsWhiteSpace(tmpBuffer[ctr]))
-                    BuffSize++;
-            }
+            BuffSize = GetNumBytes(txtDataBuffer.Text);
 
-            tmpBuffer = tmpBuffer.Trim();
-            hexbuff = tmpBuffer.Split(' ');
-            foreach(String hex in hexbuff)
-            {
-                int val = Convert.ToInt32(hex, 16);
-                buff2.Add(val);
-            }
-
-            // Calculate Modbus CRC-16 based on the data buffer
-            
-            for(int i = 0; i < buff2.Count; i++)
-            {
-                CRCResult ^= buff2[i];
-                for (int j = 0; j < 8; j++)
-                {
-                    XOR = CRCResult & 0x01;
-                    CRCResult >>= 1;
-
-                    if (XOR > 0)
-                        CRCResult ^= XORVal;
-                }
-            }
-            
-            /*
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                CRCResult ^= buffer[i];
-                for (int j = 0; j < 8; j++)
-                {
-                    XOR = CRCResult & 0x01;
-                    CRCResult >>= 1;
-
-                    if (XOR > 0)
-                        CRCResult ^= XORVal;
-                }
-            }
-            */
+            buffer = CreateDataBuffer(txtDataBuffer.Text);
+            ModbusCRC16 = CalcModbusCRC16(buffer); // Calculate Modbus CRC-16 based on the data buffer
 
             // Fill in all the text boxes with the CRC-16 result, both combined and split.
-            CRC16Upper = CRCResult & 0x00FF;
-            CRC16Lower = (CRCResult & 0xFF00) >> 8;
-            txtModCRC16Result.Text = "0x" + CRCResult.ToString("X");
+            CRC16Upper = ModbusCRC16 & 0x00FF;
+            CRC16Lower = (ModbusCRC16 & 0xFF00) >> 8;
+            txtModCRC16Result.Text = "0x" + ModbusCRC16.ToString("X");
             txtModCRC16Upper.Text = CRC16Upper.ToString("X");
             txtModCRC16Lower.Text = CRC16Lower.ToString("X");
         }
@@ -100,6 +52,59 @@ namespace Modbus_CRC16_Calc
         private void frmMain_Load(object sender, EventArgs e)
         {
             txtDataBuffer.Focus();
+        }
+
+        private int GetNumBytes(string p_Buffer)
+        {
+            int BuffSize = 0;
+            Char c;
+
+            p_Buffer = p_Buffer.Trim();
+            p_Buffer = p_Buffer.PadRight(p_Buffer.Length + 1);
+            for (int ctr = 0; ctr < p_Buffer.Length; ctr++)
+            {
+                c = p_Buffer[ctr];
+                if (Char.IsWhiteSpace(p_Buffer[ctr]))
+                    BuffSize++;
+            }
+
+            return BuffSize;
+        }
+
+        private List<int> CreateDataBuffer(string p_Buffer)
+        {
+            string[] HexBuffer;
+            List<int> RetVal = new List<int>();
+
+            p_Buffer = p_Buffer.Trim();
+            HexBuffer = p_Buffer.Split(' ');
+            foreach (String HexStr in HexBuffer)
+            {
+                int HexVal = Convert.ToInt32(HexStr, 16);
+                RetVal.Add(HexVal);
+            }
+
+            return RetVal;
+        }
+
+        private int CalcModbusCRC16(List<int>p_DataBuffer)
+        {
+            int CRCResult = 0xFFFF, XORVal = 0xA001, XOR = 0;
+
+            for (int i = 0; i < p_DataBuffer.Count; i++)
+            {
+                CRCResult ^= p_DataBuffer[i];
+                for (int j = 0; j < 8; j++)
+                {
+                    XOR = CRCResult & 0x01;
+                    CRCResult >>= 1;
+
+                    if (XOR > 0)
+                        CRCResult ^= XORVal;
+                }
+            }
+
+            return CRCResult;
         }
     }
 }
