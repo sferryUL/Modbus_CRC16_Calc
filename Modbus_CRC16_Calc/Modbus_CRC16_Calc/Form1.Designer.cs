@@ -195,6 +195,7 @@
             this.Controls.Add(this.lblModCRC16Result);
             this.Controls.Add(this.txtDataBuffer);
             this.Controls.Add(this.lblDataBuffer);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "frmMain";
             this.Text = "Modbus CRC-16 Calculator";
             this.Load += new System.EventHandler(this.frmMain_Load);

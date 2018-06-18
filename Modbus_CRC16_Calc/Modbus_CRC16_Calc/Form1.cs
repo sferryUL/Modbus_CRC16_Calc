@@ -20,8 +20,10 @@ namespace Modbus_CRC16_Calc
         private void btnCalcModCRC16_Click(object sender, EventArgs e)
         {
             ushort BuffSize = 0;
-            int ModbusCRC16, CRC16Upper = 0, CRC16Lower = 0;
+            ushort ModbusCRC16;
+            byte CRC16Upper, CRC16Lower;
             List<byte> buffer = new List<byte>();
+            List<byte> BuffModBus = new List<byte>();
 
             if (txtDataBuffer.Text == "")
                 return;
@@ -33,8 +35,11 @@ namespace Modbus_CRC16_Calc
             ModbusCRC16 = CalcModbusCRC16(buffer); // Calculate Modbus CRC-16 based on the data buffer
 
             // Fill in all the text boxes with the CRC-16 result, both combined and split.
-            CRC16Upper = ModbusCRC16 & 0x00FF;
-            CRC16Lower = (ModbusCRC16 & 0xFF00) >> 8;
+            CRC16Upper = (byte)(ModbusCRC16 & 0x00FF);
+            CRC16Lower = (byte)(ModbusCRC16 >> 8);
+
+            buffer = CombineBuffandCRC16(buffer, ModbusCRC16);
+            txtDataBuffComplete.Text = CreateDataBufferString(buffer);
 
             txtBuffSize.Text = BuffSize.ToString();
             txtModCRC16Result.Text = "0x" + ModbusCRC16.ToString("X");
@@ -45,9 +50,11 @@ namespace Modbus_CRC16_Calc
         private void btnClear_Click(object sender, EventArgs e)
         {
             txtDataBuffer.Clear();
+            txtBuffSize.Clear();
             txtModCRC16Result.Clear();
             txtModCRC16Upper.Clear();
             txtModCRC16Lower.Clear();
+            txtDataBuffComplete.Clear();
             txtDataBuffer.Focus();
         }
 
@@ -108,5 +115,26 @@ namespace Modbus_CRC16_Calc
 
             return CRCResult;
         }
+
+        private List<byte> CombineBuffandCRC16(List<byte> p_DataBuffer, ushort ModbusCRC16)
+        {
+            p_DataBuffer.Add((byte)(ModbusCRC16 & 0x00FF));
+            p_DataBuffer.Add((byte)(ModbusCRC16 >> 8));
+
+            return p_DataBuffer;
+        }
+
+        private string CreateDataBufferString(List<byte> p_DataBuffer)
+        {
+            string RetVal = "";
+
+            for (ushort i = 0; i < p_DataBuffer.Count; i++)
+            {
+                RetVal += ("0x" + p_DataBuffer[i].ToString("X2") + " ");
+            }
+
+            return RetVal;
+        }
+
     }
 }
