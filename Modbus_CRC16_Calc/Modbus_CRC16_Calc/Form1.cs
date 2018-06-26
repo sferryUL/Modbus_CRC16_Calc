@@ -23,14 +23,10 @@ namespace Modbus_CRC16_Calc
 
             byte RegSize;
             List<byte> Payload = new List<byte>();
-            ModbusRTU Msg = new ModbusRTU();
+            ModbusRTUMaster Msg = new ModbusRTUMaster();
 
 
-            if (txtDataBuffer.Text == "")
-                return;
-
-
-            Msg.SlaveAddr = Convert.ToByte(txtSlaveAddr.Text); // Get Slave Address
+            Msg.SlaveAddr = Convert.ToByte(txtSlaveAddr.Text, 16); // Get Slave Address
 
             switch (cmbFuncCode.SelectedIndex) // Get Function Code
             {
@@ -45,11 +41,12 @@ namespace Modbus_CRC16_Calc
                     break;
             }
 
-            Msg.StartReg = Convert.ToUInt16(txtStartReg.Text);  // Get Starting Register
+            Msg.StartReg = Convert.ToUInt16(txtStartReg.Text, 16);  // Get Starting Register
             Msg.RegCount = Convert.ToUInt16(txtRegCnt.Text);             // Get number of registers to be read or written
             RegSize = Convert.ToByte(txtRegSize.Text);           // Get size of each register to be read or written
 
-            Payload = CreateDataPayload(txtDataBuffer.Text);
+            if(txtDataBuffer.Text != "")
+                Payload = CreateDataPayload(txtDataBuffer.Text);
 
 
             Msg.CreateMessage(Payload);
@@ -71,14 +68,14 @@ namespace Modbus_CRC16_Calc
             txtModCRC16Upper.Clear();
             txtModCRC16Lower.Clear();
             txtDataBuffComplete.Clear();
-            txtDataBuffer.Focus();
+
+            txtSlaveAddr.Focus();
         }
 
         private void frmMain_Load(object sender, EventArgs e)
         {
             txtSlaveAddr.Focus();
             cmbFuncCode.SelectedIndex = 0;
-            txtRegSize.Text = 2.ToString();
         }
 
         private ushort GetNumBytes(string p_Buffer)
@@ -126,7 +123,7 @@ namespace Modbus_CRC16_Calc
             return RetVal;
         }
 
-        public string CreateModbusRTUDataString(ModbusRTU p_Msg)
+        public string CreateModbusRTUDataString(ModbusRTUMaster p_Msg)
         {
             string RetVal = "";
 

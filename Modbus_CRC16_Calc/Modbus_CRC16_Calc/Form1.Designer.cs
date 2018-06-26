@@ -250,8 +250,10 @@
             // 
             this.txtRegSize.Location = new System.Drawing.Point(122, 118);
             this.txtRegSize.Name = "txtRegSize";
+            this.txtRegSize.ReadOnly = true;
             this.txtRegSize.Size = new System.Drawing.Size(46, 20);
             this.txtRegSize.TabIndex = 4;
+            this.txtRegSize.Text = "2";
             // 
             // lblRegSize
             // 
