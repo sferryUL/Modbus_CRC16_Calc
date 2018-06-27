@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Modbus;
 
 namespace Modbus_CRC16_Calc
 {
@@ -19,32 +20,44 @@ namespace Modbus_CRC16_Calc
 
         private void btnCalcModCRC16_Click(object sender, EventArgs e)
         {
-            ushort BuffSize = 0;
-            ushort ModbusCRC16;
-            byte CRC16Upper, CRC16Lower;
-            List<byte> buffer = new List<byte>();
-            List<byte> BuffModBus = new List<byte>();
 
-            if (txtDataBuffer.Text == "")
-                return;
+            byte RegSize;
+            List<byte> Payload = new List<byte>();
+            ModbusRTUMaster Msg = new ModbusRTUMaster();
 
-            // Determine the number of bytes that have been entered into the data field.
-            BuffSize = GetNumBytes(txtDataBuffer.Text);
 
-            buffer = CreateDataBuffer(txtDataBuffer.Text);
-            ModbusCRC16 = CalcModbusCRC16(buffer); // Calculate Modbus CRC-16 based on the data buffer
+            Msg.SlaveAddr = Convert.ToByte(txtSlaveAddr.Text, 16); // Get Slave Address
 
-            // Fill in all the text boxes with the CRC-16 result, both combined and split.
-            CRC16Upper = (byte)(ModbusCRC16 & 0x00FF);
-            CRC16Lower = (byte)(ModbusCRC16 >> 8);
+            switch (cmbFuncCode.SelectedIndex) // Get Function Code
+            {
+                case 0:
+                    Msg.FuncCode = 0x03;
+                    break;
+                case 1:
+                    Msg.FuncCode = 0x08;
+                    break;
+                case 2:
+                    Msg.FuncCode = 0x10;
+                    break;
+            }
 
-            buffer = CombineBuffandCRC16(buffer, ModbusCRC16);
-            txtDataBuffComplete.Text = CreateDataBufferString(buffer);
+            Msg.StartReg = Convert.ToUInt16(txtStartReg.Text, 16);  // Get Starting Register
+            Msg.RegCount = Convert.ToUInt16(txtRegCnt.Text);             // Get number of registers to be read or written
+            RegSize = Convert.ToByte(txtRegSize.Text);           // Get size of each register to be read or written
 
-            txtBuffSize.Text = BuffSize.ToString();
-            txtModCRC16Result.Text = "0x" + ModbusCRC16.ToString("X");
-            txtModCRC16Upper.Text = CRC16Upper.ToString("X");
-            txtModCRC16Lower.Text = CRC16Lower.ToString("X");
+            if(txtDataBuffer.Text != "")
+                Payload = CreateDataPayload(txtDataBuffer.Text);
+
+
+            Msg.CreateMessage(Payload);
+
+
+            txtDataBuffComplete.Text = CreateModbusRTUDataString(Msg);
+
+            txtBuffSize.Text = Msg.DataBytes.ToString();
+            txtModCRC16Result.Text = "0x" + Msg.CRC16.ToString("X4");
+            txtModCRC16Upper.Text = "0x" + ((byte)(Msg.CRC16 & 0x00FF)).ToString("X2");
+            txtModCRC16Lower.Text = "0x" + ((byte)(Msg.CRC16 >> 8)).ToString("X2");
         }
 
         private void btnClear_Click(object sender, EventArgs e)
@@ -55,12 +68,14 @@ namespace Modbus_CRC16_Calc
             txtModCRC16Upper.Clear();
             txtModCRC16Lower.Clear();
             txtDataBuffComplete.Clear();
-            txtDataBuffer.Focus();
+
+            txtSlaveAddr.Focus();
         }
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            txtDataBuffer.Focus();
+            txtSlaveAddr.Focus();
+            cmbFuncCode.SelectedIndex = 0;
         }
 
         private ushort GetNumBytes(string p_Buffer)
@@ -79,8 +94,8 @@ namespace Modbus_CRC16_Calc
 
             return BuffSize;
         }
-
-        private List<byte> CreateDataBuffer(string p_Buffer)
+        
+        private List<byte> CreateDataPayload(string p_Buffer)
         {
             string[] HexBuffer;
             List<byte> RetVal = new List<byte>();
@@ -96,34 +111,6 @@ namespace Modbus_CRC16_Calc
             return RetVal;
         }
 
-        private ushort CalcModbusCRC16(List<byte>p_DataBuffer)
-        {
-            ushort CRCResult = 0xFFFF, XORVal = 0xA001, XOR = 0x0000;
-
-            for (int i = 0; i < p_DataBuffer.Count; i++)
-            {
-                CRCResult ^= p_DataBuffer[i];
-                for (int j = 0; j < 8; j++)
-                {
-                    XOR = (ushort)(CRCResult & 0x0001);
-                    CRCResult >>= 1;
-
-                    if (XOR > 0)
-                        CRCResult ^= XORVal;
-                }
-            }
-
-            return CRCResult;
-        }
-
-        private List<byte> CombineBuffandCRC16(List<byte> p_DataBuffer, ushort ModbusCRC16)
-        {
-            p_DataBuffer.Add((byte)(ModbusCRC16 & 0x00FF));
-            p_DataBuffer.Add((byte)(ModbusCRC16 >> 8));
-
-            return p_DataBuffer;
-        }
-
         private string CreateDataBufferString(List<byte> p_DataBuffer)
         {
             string RetVal = "";
@@ -132,6 +119,16 @@ namespace Modbus_CRC16_Calc
             {
                 RetVal += ("0x" + p_DataBuffer[i].ToString("X2") + " ");
             }
+
+            return RetVal;
+        }
+
+        public string CreateModbusRTUDataString(ModbusRTUMaster p_Msg)
+        {
+            string RetVal = "";
+
+            for (int i = 0; i < p_Msg.MsgSize; i++)
+                RetVal += ("0x" + p_Msg.Msg[i].ToString("X2") + " ");
 
             return RetVal;
         }
